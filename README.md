@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/favicon.ico" width="100" alt="KetoHoy Logo">
+  <img src="public/logo.jpg" width="150" style="border-radius: 20px" alt="KetoHoy Logo">
 </p>
 
 <h1 align="center">KetoHoy (Mercadona)</h1>
