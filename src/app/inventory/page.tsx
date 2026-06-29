@@ -28,8 +28,37 @@ type MercadonaResult = {
   ketoScore: number
   mercadonaId: string | null
   unitPrice: number | null
+  referencePrice: string | null
   imageUrl: string | null
   tags: string
+  ingredients?: string
+  allergens?: string
+}
+
+type NutritionModal = {
+  name: string
+  imageUrl: string | null
+  ketoScore: number
+  category: string
+  unitPrice: number | null
+  mercadonaId: string | null
+  ingredients?: string
+  allergens?: string
+}
+
+const KETO_SCORE_LABEL: Record<number, { label: string; color: string; desc: string }> = {
+  5: { label: 'Muy keto', color: 'text-green-400', desc: 'Carne, pescado, huevos, aceites — base de la dieta keto' },
+  4: { label: 'Keto', color: 'text-lime-400', desc: 'Lácteos, verduras bajas en carbos, frutos secos' },
+  3: { label: 'Low carb', color: 'text-yellow-400', desc: 'Usar con moderación. Revisar etiqueta' },
+  2: { label: 'Dudoso', color: 'text-orange-400', desc: 'Puede tener azúcares ocultos o almidón' },
+  1: { label: 'Poco keto', color: 'text-red-400', desc: 'Alto en carbohidratos, evitar en keto estricto' },
+  0: { label: 'No keto', color: 'text-red-600', desc: 'Pan, pasta, azúcar, cereales — no compatibles' },
+}
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  meat: '🥩', fish: '🐟', eggs: '🥚', dairy: '🧀',
+  vegetables: '🥦', fruit: '🍓', nuts: '🌰', oils: '🫒',
+  sauces: '🥫', drinks: '🥤', other: '🍽️',
 }
 
 export default function InventoryPage() {
@@ -41,6 +70,8 @@ export default function InventoryPage() {
   const [mercadonaSearched, setMercadonaSearched] = useState(false)
   const [addingId, setAddingId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [modal, setModal] = useState<NutritionModal | null>(null)
+  const [loadingNutrition, setLoadingNutrition] = useState(false)
 
   // Manual add
   const [showManual, setShowManual] = useState(false)
@@ -55,7 +86,6 @@ export default function InventoryPage() {
 
   useEffect(() => { fetchPantry() }, [fetchPantry])
 
-  const pantryProductIds = new Set(pantryItems.map(i => i.productId))
   const pantryMercadonaIds = new Set(
     pantryItems.map(i => i.product.mercadonaId).filter(Boolean)
   )
@@ -72,22 +102,16 @@ export default function InventoryPage() {
 
   const handleAddMercadona = async (p: MercadonaResult) => {
     setAddingId(p.id)
-    // Save product to DB then add to pantry
     const saved = await fetch('/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: p.name,
-        brand: p.brand,
-        source: 'mercadona',
+        name: p.name, brand: p.brand, source: 'mercadona',
         mercadonaId: p.id.replace('mercadona_', ''),
-        category: p.category,
-        ketoScore: p.ketoScore,
-        unitPrice: p.unitPrice,
-        imageUrl: p.imageUrl,
+        category: p.category, ketoScore: p.ketoScore,
+        unitPrice: p.unitPrice, imageUrl: p.imageUrl,
       }),
     }).then(r => r.json())
-
     await fetch('/api/pantry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -121,10 +145,94 @@ export default function InventoryPage() {
     await fetchPantry()
   }
 
+  // Open nutrition modal — fetch full detail if Mercadona product
+  const handleOpenNutrition = async (item: PantryItem) => {
+    const base: NutritionModal = {
+      name: item.product.name,
+      imageUrl: item.product.imageUrl,
+      ketoScore: item.product.ketoScore,
+      category: item.product.category,
+      unitPrice: item.product.unitPrice,
+      mercadonaId: item.product.mercadonaId,
+    }
+    setModal(base)
+    if (item.product.mercadonaId) {
+      setLoadingNutrition(true)
+      const res = await fetch(`/api/mercadona/product/${item.product.mercadonaId}`)
+      if (res.ok) {
+        const detail = await res.json()
+        setModal({ ...base, ingredients: detail.ingredients, allergens: detail.allergens })
+      }
+      setLoadingNutrition(false)
+    }
+  }
+
   if (loading) return <div className="p-4 text-gray-500">Cargando...</div>
+
+  const ketoInfo = KETO_SCORE_LABEL[modal?.ketoScore ?? 3]
 
   return (
     <main className="p-4">
+      {/* Nutrition modal */}
+      {modal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center" onClick={() => setModal(null)}>
+          <div
+            className="bg-gray-900 rounded-t-2xl w-full max-w-2xl p-5 max-h-[80vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-4 mb-4">
+              {modal.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={modal.imageUrl} alt={modal.name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+              )}
+              <div className="flex-1">
+                <h2 className="font-bold text-lg leading-tight">{modal.name}</h2>
+                {modal.unitPrice && <p className="text-green-400 font-medium">{modal.unitPrice.toFixed(2)}€</p>}
+              </div>
+              <button onClick={() => setModal(null)} className="text-gray-500 text-2xl leading-none">×</button>
+            </div>
+
+            {/* Keto score */}
+            <div className="bg-gray-800 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-3 mb-1">
+                <span className={`text-2xl font-bold ${ketoInfo?.color}`}>{modal.ketoScore}/5</span>
+                <span className={`font-semibold ${ketoInfo?.color}`}>{ketoInfo?.label}</span>
+              </div>
+              <p className="text-sm text-gray-400">{ketoInfo?.desc}</p>
+              <p className="text-xs text-gray-600 mt-2">
+                Calculado por categoría: <span className="text-gray-400">{CATEGORY_EMOJI[modal.category]} {modal.category}</span>.
+                El score keto viene de reglas por categoría de alimento, no de macros exactos.
+              </p>
+            </div>
+
+            {loadingNutrition ? (
+              <p className="text-gray-500 text-sm text-center py-4">Cargando info nutricional...</p>
+            ) : (
+              <>
+                {modal.ingredients && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Ingredientes</p>
+                    <p className="text-sm text-gray-300 leading-relaxed">{modal.ingredients}</p>
+                  </div>
+                )}
+                {modal.allergens && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-yellow-500 uppercase tracking-wide mb-1">⚠️ Alérgenos</p>
+                    <p className="text-sm text-yellow-200">{modal.allergens}</p>
+                  </div>
+                )}
+                {!modal.ingredients && !modal.allergens && modal.mercadonaId && (
+                  <p className="text-gray-600 text-sm text-center py-2">Sin información nutricional disponible</p>
+                )}
+                {!modal.mercadonaId && (
+                  <p className="text-gray-600 text-sm text-center py-2">Producto añadido manualmente — sin datos de Mercadona</p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-4 pb-4">
         <div>
           <h1 className="text-xl font-bold">Mi despensa</h1>
@@ -138,7 +246,6 @@ export default function InventoryPage() {
         </button>
       </div>
 
-      {/* Manual add */}
       {showManual && (
         <div className="bg-gray-900 rounded-xl p-4 mb-4 flex gap-2">
           <input
@@ -181,6 +288,7 @@ export default function InventoryPage() {
               const mercId = p.id.replace('mercadona_', '')
               const alreadyInPantry = pantryMercadonaIds.has(mercId)
               const pantryItem = pantryItems.find(i => i.product.mercadonaId === mercId)
+              const score = KETO_SCORE_LABEL[p.ketoScore]
               return (
                 <div key={p.id} className="flex items-center gap-3 bg-gray-800 rounded-xl p-3">
                   {p.imageUrl && (
@@ -189,9 +297,9 @@ export default function InventoryPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{p.name}</div>
-                    <div className="text-xs text-gray-500 flex gap-2 mt-0.5">
+                    <div className="text-xs flex gap-2 mt-0.5">
                       {p.unitPrice && <span className="text-green-400 font-medium">{p.unitPrice.toFixed(2)}€</span>}
-                      <span>keto {p.ketoScore}/5</span>
+                      <span className={score?.color ?? 'text-gray-500'}>keto {p.ketoScore}/5 · {score?.label}</span>
                     </div>
                   </div>
                   {alreadyInPantry ? (
@@ -222,7 +330,7 @@ export default function InventoryPage() {
         )}
       </div>
 
-      {/* Current pantry */}
+      {/* Pantry items */}
       <div>
         <p className="text-sm font-medium text-gray-400 mb-3">En casa</p>
         {pantryItems.length === 0 ? (
@@ -233,31 +341,42 @@ export default function InventoryPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {pantryItems.map(item => (
-              <div key={item.id} className="flex items-center gap-3 bg-gray-900 rounded-xl p-3">
-                {item.product.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.product.imageUrl} alt={item.product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-lg flex-shrink-0">
-                    {item.product.category === 'meat' ? '🥩' : item.product.category === 'fish' ? '🐟' : item.product.category === 'eggs' ? '🥚' : item.product.category === 'dairy' ? '🧀' : item.product.category === 'vegetables' ? '🥦' : item.product.category === 'nuts' ? '🌰' : item.product.category === 'oils' ? '🫒' : '🍽️'}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{item.product.name}</div>
-                  {item.product.unitPrice && (
-                    <div className="text-xs text-gray-500">{item.product.unitPrice.toFixed(2)}€</div>
-                  )}
+            {pantryItems.map(item => {
+              const score = KETO_SCORE_LABEL[item.product.ketoScore]
+              return (
+                <div key={item.id} className="flex items-center gap-3 bg-gray-900 rounded-xl p-3">
+                  <button onClick={() => handleOpenNutrition(item)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                    {item.product.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.product.imageUrl} alt={item.product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-lg flex-shrink-0">
+                        {CATEGORY_EMOJI[item.product.category] ?? '🍽️'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{item.product.name}</div>
+                      <div className="text-xs flex gap-2 mt-0.5">
+                        {item.product.unitPrice && (
+                          <span className="text-green-400">{item.product.unitPrice.toFixed(2)}€</span>
+                        )}
+                        <span className={score?.color ?? 'text-gray-500'}>
+                          keto {item.product.ketoScore}/5 · {score?.label}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-gray-600 text-xs flex-shrink-0">ℹ️</span>
+                  </button>
+                  <button
+                    onClick={() => handleRemoveFromPantry(item.id)}
+                    disabled={removingId === item.id}
+                    className="text-gray-600 hover:text-red-400 transition-colors text-lg flex-shrink-0 pl-2"
+                  >
+                    ×
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleRemoveFromPantry(item.id)}
-                  disabled={removingId === item.id}
-                  className="text-gray-600 hover:text-red-400 transition-colors text-lg flex-shrink-0"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

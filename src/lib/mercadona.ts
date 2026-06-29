@@ -17,6 +17,8 @@ export type MercadonaProduct = {
   referencePrice: string | null
   imageUrl: string | null
   tags: string
+  ingredients?: string
+  allergens?: string
 }
 
 async function isMercadonaCliAvailable(): Promise<boolean> {
@@ -69,11 +71,15 @@ type RawHit = {
   id?: string | number
   display_name?: string
   thumbnail?: string
-  categories?: Array<{ name: string }>
+  categories?: Array<{ name: string; categories?: Array<{ name: string }> }>
   price_instructions?: {
     unit_price?: string | number
     reference_price?: string | number
     reference_format?: string
+  }
+  nutrition_information?: {
+    ingredients?: string
+    allergens?: string
   }
 }
 
@@ -84,8 +90,14 @@ function normalizeMercadonaProducts(raw: unknown[]): MercadonaProduct[] {
       const price = item.price_instructions?.unit_price
       const refPrice = item.price_instructions?.reference_price
       const refFormat = item.price_instructions?.reference_format
-      const categoryName = item.categories?.[0]?.name ?? ''
+      // Use deepest category name for better mapping
+      const topCategory = item.categories?.[0]
+      const midCategory = topCategory?.categories?.[0]
+      const categoryName = midCategory?.name ?? topCategory?.name ?? ''
       const mappedCategory = mapMercadonaCategory(categoryName) as ProductCategory
+
+      // Strip HTML tags from ingredients/allergens
+      const stripHtml = (s?: string) => s?.replace(/<[^>]+>/g, '') ?? undefined
 
       return {
         id: `mercadona_${item.id}`,
@@ -99,6 +111,8 @@ function normalizeMercadonaProducts(raw: unknown[]): MercadonaProduct[] {
         referencePrice: refPrice != null ? `${refPrice}€/${refFormat ?? 'u'}` : null,
         imageUrl: item.thumbnail ?? null,
         tags: '[]',
+        ingredients: stripHtml(item.nutrition_information?.ingredients),
+        allergens: stripHtml(item.nutrition_information?.allergens),
       }
     })
 }
