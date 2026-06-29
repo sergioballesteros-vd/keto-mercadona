@@ -1,0 +1,54 @@
+import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { scoreRecipe, sortSuggestions } from '@/lib/recipeScoring'
+import type { RecipeWithIngredients, ScoringOptions } from '@/lib/recipeScoring'
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const mealType = searchParams.get('mealType') ?? undefined
+  const maxTime = searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined
+  const onlyAvailable = searchParams.get('onlyAvailable') === 'true'
+
+  const [recipes, pantryItems, prefs] = await Promise.all([
+    db.recipe.findMany({ include: { ingredients: true } }),
+    db.pantryItem.findMany({ include: { product: true } }),
+    db.userPreferences.findFirst(),
+  ])
+
+  const defaultPrefs = {
+    avoidFish: false,
+    avoidPork: false,
+    avoidDairy: false,
+    maxCookingMinutes: 30,
+  }
+  const preferences = prefs
+    ? {
+        avoidFish: prefs.avoidFish,
+        avoidPork: prefs.avoidPork,
+        avoidDairy: prefs.avoidDairy,
+        maxCookingMinutes: maxTime ?? prefs.maxCookingMinutes,
+      }
+    : { ...defaultPrefs, maxCookingMinutes: maxTime ?? defaultPrefs.maxCookingMinutes }
+
+  const pantryProductIds = new Set(pantryItems.map(i => i.productId))
+  const pantryProductNames = pantryItems.map(i => i.product.name.toLowerCase())
+
+  const opts: ScoringOptions = {
+    pantryProductIds,
+    pantryProductNames,
+    preferences,
+    mealType,
+  }
+
+  const suggestions = recipes
+    .map(r => scoreRecipe(r as RecipeWithIngredients, opts))
+    .filter((s): s is NonNullable<typeof s> => s !== null)
+
+  let sorted = sortSuggestions(suggestions)
+
+  if (onlyAvailable) {
+    sorted = sorted.filter(s => s.missingIngredients.length === 0)
+  }
+
+  return NextResponse.json(sorted.slice(0, 20))
+}
