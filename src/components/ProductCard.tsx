@@ -46,7 +46,20 @@ export default function ProductCard({ product, inPantry, pantryItemId, onToggle 
       }`}
     >
       <div className="flex items-start gap-2">
-        <span className="text-2xl">{categoryEmoji[product.category] ?? '🍽️'}</span>
+        {product.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-gray-800"
+          />
+        ) : (
+          <span className="text-2xl w-12 h-12 flex items-center justify-center flex-shrink-0">
+            {categoryEmoji[product.category] ?? '🍽️'}
+          </span>
+        )}
         <div className="flex-1 min-w-0">
           <div className="font-medium text-sm truncate">{product.name}</div>
           {product.brand && <div className="text-xs text-gray-500 truncate">{product.brand}</div>}
