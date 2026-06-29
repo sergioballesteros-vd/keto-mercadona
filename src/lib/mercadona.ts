@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { ketoScoreByCategory } from '@/lib/ketoRules'
+import type { ProductCategory } from '@/lib/ketoRules'
 
 const execFileAsync = promisify(execFile)
 
@@ -83,6 +85,7 @@ function normalizeMercadonaProducts(raw: unknown[]): MercadonaProduct[] {
       const refPrice = item.price_instructions?.reference_price
       const refFormat = item.price_instructions?.reference_format
       const categoryName = item.categories?.[0]?.name ?? ''
+      const mappedCategory = mapMercadonaCategory(categoryName) as ProductCategory
 
       return {
         id: `mercadona_${item.id}`,
@@ -90,8 +93,8 @@ function normalizeMercadonaProducts(raw: unknown[]): MercadonaProduct[] {
         brand: 'Hacendado',
         source: 'mercadona' as const,
         mercadonaId: String(item.id ?? ''),
-        category: mapMercadonaCategory(categoryName),
-        ketoScore: 2,
+        category: mappedCategory,
+        ketoScore: ketoScoreByCategory(mappedCategory),
         unitPrice: price != null ? parseFloat(String(price)) : null,
         referencePrice: refPrice != null ? `${refPrice}€/${refFormat ?? 'u'}` : null,
         imageUrl: item.thumbnail ?? null,

@@ -39,6 +39,7 @@ export type ScoringOptions = {
     maxCookingMinutes: number
   }
   mealType?: string
+  minAvailability?: number // default 0.6
 }
 
 export function scoreRecipe(
@@ -84,9 +85,9 @@ export function scoreRecipe(
     }
   }
 
-  // 60% availability threshold
   const availabilityRatio = available.length / required.length
-  if (availabilityRatio < 0.6) return null
+  const minAvailability = opts.minAvailability ?? 0.6
+  if (availabilityRatio < minAvailability) return null
 
   // Scoring formula
   let score = 0

@@ -42,7 +42,7 @@ export default function PreferencesPage() {
         <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm">← Inicio</Link>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 pb-8">
         {/* Keto mode */}
         <div className="bg-gray-900 rounded-xl p-4">
           <label className="block font-medium mb-3">Modo keto</label>

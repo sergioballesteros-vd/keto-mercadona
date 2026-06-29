@@ -39,30 +39,32 @@ export async function POST() {
   const mealTypes = ['breakfast', 'lunch', 'dinner']
   const plan = await db.weeklyPlan.create({ data: { weekStart: monday } })
 
-  for (let day = 0; day < 7; day++) {
-    for (const mealType of mealTypes) {
-      const opts: ScoringOptions = {
-        pantryProductIds,
-        pantryProductNames,
-        preferences,
-        mealType,
-      }
-      const suggestions = recipes
+  // Pre-compute sorted suggestions per meal type (40% threshold for more variety)
+  const suggestionsByType: Record<string, string[]> = {}
+  for (const mealType of mealTypes) {
+    const opts: ScoringOptions = {
+      pantryProductIds,
+      pantryProductNames,
+      preferences,
+      mealType,
+      minAvailability: 0.4,
+    }
+    const sorted = sortSuggestions(
+      recipes
         .map(r => scoreRecipe(r as RecipeWithIngredients, opts))
         .filter((s): s is NonNullable<typeof s> => s !== null)
-      const sorted = sortSuggestions(suggestions)
+    )
+    suggestionsByType[mealType] = sorted.map(s => s.recipe.id)
+  }
 
-      // Pick a recipe, cycling through top suggestions to avoid repetition
-      const pick = sorted[day % Math.max(sorted.length, 1)]
-
-      if (pick) {
+  for (let day = 0; day < 7; day++) {
+    for (const mealType of mealTypes) {
+      const pool = suggestionsByType[mealType] ?? []
+      // Rotate through pool offsetting by day to spread variety
+      const recipeId = pool[day % Math.max(pool.length, 1)]
+      if (recipeId) {
         await db.weeklyMeal.create({
-          data: {
-            planId: plan.id,
-            recipeId: pick.recipe.id,
-            dayOfWeek: day,
-            mealType,
-          },
+          data: { planId: plan.id, recipeId, dayOfWeek: day, mealType },
         })
       }
     }

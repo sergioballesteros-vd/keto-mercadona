@@ -67,7 +67,7 @@ export default function ShoppingListPage() {
         <div>
           <h1 className="text-xl font-bold">Lista de compra</h1>
           <p className="text-sm text-gray-400">
-            {unchecked.length} pendientes
+            {unchecked.length} {unchecked.length === 1 ? 'pendiente' : 'pendientes'}
             {totalPrice > 0 && ` · ~${totalPrice.toFixed(2)}€`}
           </p>
         </div>
