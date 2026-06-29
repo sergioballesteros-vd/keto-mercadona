@@ -37,7 +37,9 @@ export async function searchMercadonaProducts(query: string): Promise<MercadonaP
       { timeout: 10000 }
     )
     const raw = JSON.parse(stdout)
-    return normalizeMercadonaProducts(raw)
+    // CLI returns { query, nbHits, hits: [...] }
+    const hits = Array.isArray(raw.hits) ? raw.hits : Array.isArray(raw) ? raw : []
+    return normalizeMercadonaProducts(hits)
   } catch {
     return []
   }
@@ -61,22 +63,41 @@ export async function getMercadonaProduct(id: string): Promise<MercadonaProduct 
   }
 }
 
+type RawHit = {
+  id?: string | number
+  display_name?: string
+  thumbnail?: string
+  categories?: Array<{ name: string }>
+  price_instructions?: {
+    unit_price?: string | number
+    reference_price?: string | number
+    reference_format?: string
+  }
+}
+
 function normalizeMercadonaProducts(raw: unknown[]): MercadonaProduct[] {
   return raw
-    .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
-    .map(item => ({
-      id: `mercadona_${item['id']}`,
-      name: String(item['name'] ?? ''),
-      brand: String(item['brand'] ?? 'Mercadona'),
-      source: 'mercadona' as const,
-      mercadonaId: String(item['id'] ?? ''),
-      category: mapMercadonaCategory(String(item['category'] ?? '')),
-      ketoScore: 2, // unknown until manual review
-      unitPrice: typeof item['price'] === 'number' ? item['price'] : null,
-      referencePrice: item['reference_price'] ? String(item['reference_price']) : null,
-      imageUrl: item['thumbnail'] ? String(item['thumbnail']) : null,
-      tags: '[]',
-    }))
+    .filter((item): item is RawHit => typeof item === 'object' && item !== null)
+    .map(item => {
+      const price = item.price_instructions?.unit_price
+      const refPrice = item.price_instructions?.reference_price
+      const refFormat = item.price_instructions?.reference_format
+      const categoryName = item.categories?.[0]?.name ?? ''
+
+      return {
+        id: `mercadona_${item.id}`,
+        name: item.display_name ?? '',
+        brand: 'Hacendado',
+        source: 'mercadona' as const,
+        mercadonaId: String(item.id ?? ''),
+        category: mapMercadonaCategory(categoryName),
+        ketoScore: 2,
+        unitPrice: price != null ? parseFloat(String(price)) : null,
+        referencePrice: refPrice != null ? `${refPrice}€/${refFormat ?? 'u'}` : null,
+        imageUrl: item.thumbnail ?? null,
+        tags: '[]',
+      }
+    })
 }
 
 function mapMercadonaCategory(raw: string): string {
