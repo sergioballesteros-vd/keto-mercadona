@@ -18,17 +18,17 @@ jobs:
             set -euo pipefail
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             DEPLOY_PATH="${DEPLOY_PATH:-/home/ubuntu/keto-mercadona}"
+            TMP_DIR="$(mktemp -d)"
+            git clone --depth 1 --branch main https://github.com/sergioballesteros-vd/ketohoy.git "$TMP_DIR"
+            rsync -a --delete \
+              --exclude '.env' \
+              --exclude '.env.local' \
+              --exclude 'dev.db' \
+              "$TMP_DIR"/ "$DEPLOY_PATH"/
             cd "$DEPLOY_PATH"
-            if [ ! -d .git ]; then
-              git init
-              git remote add origin https://github.com/sergioballesteros-vd/ketohoy.git
-            fi
-            git remote set-url origin https://github.com/sergioballesteros-vd/ketohoy.git
-            git fetch origin main
-            git checkout -B main origin/main
-            git reset --hard origin/main
             printf 'UNSPLASH_ACCESS_KEY=%s\n' "${{ secrets.UNSPLASH_ACCESS_KEY }}" > .env.local
-            npm ci --omit=dev
-            npx prisma migrate deploy
+            npm ci
+            npx prisma db push
             npm run build
             pm2 restart ${{ secrets.PM2_APP_NAME }} --update-env
+            rm -rf "$TMP_DIR"
