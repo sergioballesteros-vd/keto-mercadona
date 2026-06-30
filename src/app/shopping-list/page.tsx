@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import ShoppingListItem from '@/components/ShoppingListItem'
+import type { MercadonaProduct as MercadonaResult } from '@/lib/mercadona'
 
 type ShoppingItem = {
   id: string
@@ -9,18 +10,6 @@ type ShoppingItem = {
   checked: boolean
   reason: string | null
   product: { unitPrice: number | null; category: string } | null
-}
-
-type MercadonaResult = {
-  id: string
-  name: string
-  brand: string
-  category: string
-  ketoScore: number
-  mercadonaId: string | null
-  unitPrice: number | null
-  imageUrl: string | null
-  tags: string
 }
 
 export default function ShoppingListPage() {

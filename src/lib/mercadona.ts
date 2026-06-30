@@ -22,13 +22,20 @@ export type MercadonaProduct = {
   allergens?: string
 }
 
+// Re-export for client pages
+export type { MercadonaProduct as MercadonaResult }
+
+let _cliAvailable: boolean | null = null
+
 async function isMercadonaCliAvailable(): Promise<boolean> {
+  if (_cliAvailable !== null) return _cliAvailable
   try {
     await execFileAsync('mercadona', ['--version'], { timeout: 3000 })
-    return true
+    _cliAvailable = true
   } catch {
-    return false
+    _cliAvailable = false
   }
+  return _cliAvailable
 }
 
 export async function searchMercadonaProducts(query: string): Promise<MercadonaProduct[]> {

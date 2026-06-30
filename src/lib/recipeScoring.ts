@@ -16,8 +16,6 @@ export type RecipeWithIngredients = {
   }>
 }
 
-export type PantryProductId = string
-
 export type RecipeSuggestion = {
   recipe: RecipeWithIngredients
   score: number
@@ -27,7 +25,7 @@ export type RecipeSuggestion = {
 }
 
 export type ScoringOptions = {
-  pantryProductIds: Set<PantryProductId>
+  pantryProductIds: Set<string>
   pantryProductNames: string[] // lowercase product names in pantry
   mercadonaProductIds?: Set<string>
   recentRecipeIds?: string[] // recipes used in last 3 days
@@ -126,6 +124,4 @@ export function scoreRecipe(
   }
 }
 
-export function sortSuggestions(suggestions: RecipeSuggestion[]): RecipeSuggestion[] {
-  return [...suggestions].sort((a, b) => b.score - a.score)
-}
+export const sortSuggestions = (s: RecipeSuggestion[]) => [...s].sort((a, b) => b.score - a.score)

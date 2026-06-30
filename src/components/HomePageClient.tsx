@@ -1,7 +1,6 @@
 'use client'
 
-import { Link } from 'next-view-transitions'
-import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { LogoMark, SettingsIcon, CartIcon, MealsIcon, PantryIcon, CalendarIcon } from '@/components/icons'
 
 type HomePageClientProps = {
@@ -16,45 +15,19 @@ type HomePageClientProps = {
   }
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } },
-}
-
 export default function HomePageClient({ stats, greeting }: HomePageClientProps) {
   return (
     <main className="min-h-screen">
       {/* Hero */}
       <div className="relative px-5 pt-12 pb-8 overflow-hidden">
-        {/* Glow blob animated with framer-motion */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.2, 0.3, 0.2],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute -top-8 -right-12 w-56 h-56 rounded-full pointer-events-none"
+        {/* Glow blob animated with CSS */}
+        <div
+          className="absolute -top-8 -right-12 w-56 h-56 rounded-full pointer-events-none animate-blob-pulse"
           style={{ background: 'radial-gradient(circle, #a3e635 0%, transparent 70%)' }}
         />
 
         <div className="flex items-start justify-between relative z-10">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
+          <div className="animate-fade-left">
             <div className="flex items-center gap-2.5 mb-3">
               <LogoMark size={36} />
               <h1 className="text-3xl font-bold leading-none font-syne text-forest-50">
@@ -63,12 +36,8 @@ export default function HomePageClient({ stats, greeting }: HomePageClientProps)
             </div>
             <p className="text-lg font-semibold text-[#a3e635]">{greeting.text}</p>
             <p className="text-sm mt-0.5 text-forest-300">{greeting.sub}</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
+          </div>
+          <div className="animate-fade-scale">
             <Link
               href="/preferences"
               className="w-10 h-10 flex items-center justify-center rounded-xl transition-colors bg-forest-800 text-forest-400 hover:bg-forest-700"
@@ -76,17 +45,13 @@ export default function HomePageClient({ stats, greeting }: HomePageClientProps)
             >
               <SettingsIcon size={18} />
             </Link>
-          </motion.div>
+          </div>
         </div>
       </div>
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-      >
+      <div>
         {/* Stats */}
-        <motion.div variants={itemVariants} className="px-5 mb-6">
+        <div className="px-5 mb-6 animate-stagger-1">
           <div className="grid grid-cols-3 gap-2">
             <Link
               href="/meals"
@@ -118,10 +83,10 @@ export default function HomePageClient({ stats, greeting }: HomePageClientProps)
               <div className="text-xs font-medium text-forest-400">por comprar</div>
             </Link>
           </div>
-        </motion.div>
+        </div>
 
         {/* Primary CTA */}
-        <motion.div variants={itemVariants} className="px-5 mb-3">
+        <div className="px-5 mb-3 animate-stagger-2">
           <Link
             href="/meals"
             className="flex items-center gap-4 rounded-2xl p-5 transition-all hover:scale-[1.02] active:scale-[0.98] bg-[#a3e635]"
@@ -141,10 +106,10 @@ export default function HomePageClient({ stats, greeting }: HomePageClientProps)
             </div>
             <span className="text-xl font-bold text-forest-600">→</span>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Secondary CTAs */}
-        <motion.div variants={itemVariants} className="px-5 space-y-2">
+        <div className="px-5 space-y-2 animate-stagger-3">
           <Link
             href="/inventory"
             className="flex items-center gap-4 rounded-2xl p-4 transition-colors bg-forest-800 border border-forest-700 hover:bg-forest-700/80 active:scale-[0.99]"
@@ -198,12 +163,12 @@ export default function HomePageClient({ stats, greeting }: HomePageClientProps)
             </div>
             <span className="text-forest-500">›</span>
           </Link>
-        </motion.div>
+        </div>
 
-        <motion.p variants={itemVariants} className="text-xs text-center mt-8 pb-2 px-5 text-forest-500">
+        <p className="text-xs text-center mt-8 pb-2 px-5 text-forest-500 animate-stagger-4">
           No sustituye consejo médico o nutricional profesional.
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
     </main>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Link } from 'next-view-transitions'
+import Link from 'next/link'
 
 type Preferences = {
   id: string

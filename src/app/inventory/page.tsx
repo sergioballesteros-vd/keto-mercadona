@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import type { MercadonaProduct as MercadonaResult } from '@/lib/mercadona'
 
 type Product = {
   id: string
@@ -24,21 +25,6 @@ type PantryItem = {
   product: Product
 }
 
-type MercadonaResult = {
-  id: string
-  name: string
-  brand: string
-  category: string
-  ketoScore: number
-  mercadonaId: string | null
-  unitPrice: number | null
-  referencePrice: string | null
-  imageUrl: string | null
-  tags: string
-  ingredients?: string
-  allergens?: string
-}
-
 type NutritionModal = {
   name: string
   imageUrl: string | null
@@ -55,13 +41,13 @@ type NutritionModal = {
   nutritionSource?: 'openfoodfacts' | 'category'
 }
 
-const KETO_SCORE_LABEL: Record<number, { label: string; color: string; desc: string }> = {
-  5: { label: 'Muy keto', color: 'text-green-400', desc: 'Carne, pescado, huevos, aceites — base de la dieta keto' },
-  4: { label: 'Keto', color: 'text-lime-400', desc: 'Lácteos, verduras bajas en carbos, frutos secos' },
-  3: { label: 'Low carb', color: 'text-yellow-400', desc: 'Usar con moderación. Revisar etiqueta' },
-  2: { label: 'Dudoso', color: 'text-orange-400', desc: 'Puede tener azúcares ocultos o almidón' },
-  1: { label: 'Poco keto', color: 'text-red-400', desc: 'Alto en carbohidratos, evitar en keto estricto' },
-  0: { label: 'No keto', color: 'text-red-600', desc: 'Pan, pasta, azúcar, cereales — no compatibles' },
+const KETO_SCORE_LABEL: Record<number, { label: string; color: string; hex: string; desc: string }> = {
+  5: { label: 'Muy keto', color: 'text-green-400', hex: '#a3e635', desc: 'Carne, pescado, huevos, aceites — base de la dieta keto' },
+  4: { label: 'Keto', color: 'text-lime-400', hex: '#a3e635', desc: 'Lácteos, verduras bajas en carbos, frutos secos' },
+  3: { label: 'Low carb', color: 'text-yellow-400', hex: '#f59e0b', desc: 'Usar con moderación. Revisar etiqueta' },
+  2: { label: 'Dudoso', color: 'text-orange-400', hex: '#f97316', desc: 'Puede tener azúcares ocultos o almidón' },
+  1: { label: 'Poco keto', color: 'text-red-400', hex: '#ef4444', desc: 'Alto en carbohidratos, evitar en keto estricto' },
+  0: { label: 'No keto', color: 'text-red-600', hex: '#ef4444', desc: 'Pan, pasta, azúcar, cereales — no compatibles' },
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -183,10 +169,6 @@ export default function InventoryPage() {
 
   const ketoInfo = KETO_SCORE_LABEL[modal?.ketoScore ?? 3]
 
-  const ketoScoreColorMap: Record<number, string> = {
-    5: '#a3e635', 4: '#a3e635', 3: '#f59e0b', 2: '#f97316', 1: '#ef4444', 0: '#ef4444',
-  }
-
   return (
     <main className="px-4 pt-4 pb-4">
       {/* Nutrition modal */}
@@ -220,10 +202,10 @@ export default function InventoryPage() {
             {/* Keto score */}
             <div className="rounded-2xl p-4 mb-4" style={{ background: '#142514' }}>
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif', color: ketoScoreColorMap[modal.ketoScore] ?? '#a3e635' }}>
+                <span className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif', color: KETO_SCORE_LABEL[modal.ketoScore]?.hex ?? '#a3e635' }}>
                   {modal.ketoScore}/5
                 </span>
-                <span className="font-semibold" style={{ color: ketoScoreColorMap[modal.ketoScore] ?? '#a3e635' }}>
+                <span className="font-semibold" style={{ color: KETO_SCORE_LABEL[modal.ketoScore]?.hex ?? '#a3e635' }}>
                   {ketoInfo?.label}
                 </span>
                 <span className="text-xs ml-auto" style={{ color: '#3b5e3c' }}>
@@ -383,7 +365,7 @@ export default function InventoryPage() {
                     <div className="text-sm font-medium truncate" style={{ color: '#ecf5e0' }}>{p.name}</div>
                     <div className="text-xs flex gap-2 mt-0.5">
                       {p.unitPrice && <span className="font-medium" style={{ color: '#f59e0b' }}>{p.unitPrice.toFixed(2)}€</span>}
-                      <span style={{ color: ketoScoreColorMap[p.ketoScore] ?? '#547856' }}>
+                      <span style={{ color: KETO_SCORE_LABEL[p.ketoScore]?.hex ?? '#547856' }}>
                         {score?.label}
                       </span>
                     </div>
@@ -444,7 +426,7 @@ export default function InventoryPage() {
                 </p>
                 <div className="space-y-2">
                   {items.map(item => {
-                    const ketoColor = ketoScoreColorMap[item.product.ketoScore] ?? '#547856'
+                    const ketoColor = KETO_SCORE_LABEL[item.product.ketoScore]?.hex ?? '#547856'
                     const score = KETO_SCORE_LABEL[item.product.ketoScore]
                     return (
                       <div

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { scoreRecipe, sortSuggestions } from '@/lib/recipeScoring'
 import type { RecipeWithIngredients, ScoringOptions } from '@/lib/recipeScoring'
+import { getMonday } from '@/lib/dateUtils'
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -17,15 +18,6 @@ function extendedPool(ids: string[], size: number): string[] {
   const result: string[] = []
   while (result.length < size) result.push(...shuffle([...ids]))
   return result.slice(0, size)
-}
-
-function getMonday(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d
 }
 
 export async function POST() {
