@@ -96,8 +96,17 @@ export default function MealsPage() {
       ) : suggestions.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-5xl mb-4">🥗</p>
-          <p className="font-semibold" style={{ color: '#7a9e7c' }}>Sin recetas con estos filtros</p>
-          <p className="text-sm mt-1" style={{ color: '#3b5e3c' }}>Añade más productos a tu despensa</p>
+          {onlyAvailable ? (
+            <>
+              <p className="font-semibold" style={{ color: '#7a9e7c' }}>No tienes ingredientes para ninguna receta</p>
+              <p className="text-sm mt-1" style={{ color: '#3b5e3c' }}>Añade productos a tu despensa</p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold" style={{ color: '#7a9e7c' }}>Sin recetas con estos filtros</p>
+              <p className="text-sm mt-1" style={{ color: '#3b5e3c' }}>Prueba quitando algún filtro</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     pantryProductNames,
     preferences,
     mealType,
+    minAvailability: 0,
   }
 
   const suggestions = recipes

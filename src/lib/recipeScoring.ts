@@ -1,3 +1,5 @@
+import { ingredientMatchesProduct } from '@/lib/ingredientMatching'
+
 export type RecipeWithIngredients = {
   id: string
   title: string
@@ -63,7 +65,7 @@ export function scoreRecipe(
     const inPantryById = ing.productId && pantryProductIds.has(ing.productId)
     const ingLower = ing.name.toLowerCase()
     const inPantryByName = pantryProductNames.some(n =>
-      n.includes(ingLower) || ingLower.includes(n.split(' ')[0])
+      ingredientMatchesProduct(ingLower, n)
     )
 
     // Check avoided ingredients
