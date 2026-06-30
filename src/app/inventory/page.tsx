@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import type { MercadonaProduct as MercadonaResult } from '@/lib/mercadona'
+import ProductDetailModal from '@/components/ProductDetailModal'
 
 type Product = {
   id: string
@@ -67,10 +68,13 @@ export default function InventoryPage() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [modal, setModal] = useState<NutritionModal | null>(null)
   const [loadingNutrition, setLoadingNutrition] = useState(false)
+  const [detailProduct, setDetailProduct] = useState<MercadonaResult | null>(null)
 
   // Manual add
   const [showManual, setShowManual] = useState(false)
   const [manualName, setManualName] = useState('')
+  const [manualQty, setManualQty] = useState('')
+  const [manualUnit, setManualUnit] = useState('ud')
 
   const fetchPantry = useCallback(async () => {
     const res = await fetch('/api/pantry')
@@ -126,9 +130,15 @@ export default function InventoryPage() {
     await fetch('/api/pantry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId: saved.id }),
+      body: JSON.stringify({
+        productId: saved.id,
+        quantity: manualQty ? parseFloat(manualQty) : null,
+        unit: manualUnit !== 'ud' ? manualUnit : null,
+      }),
     })
     setManualName('')
+    setManualQty('')
+    setManualUnit('ud')
     setShowManual(false)
     await fetchPantry()
   }
@@ -306,9 +316,9 @@ export default function InventoryPage() {
       </div>
 
       {showManual && (
-        <div className="rounded-2xl p-4 mb-4 flex gap-2" style={{ background: '#142514', border: '1px solid #1c321d' }}>
+        <div className="rounded-2xl p-4 mb-4" style={{ background: '#142514', border: '1px solid #1c321d' }}>
           <input
-            className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+            className="w-full rounded-xl px-3 py-2 text-sm outline-none mb-2"
             style={{ background: '#1c321d', color: '#ecf5e0' }}
             placeholder="Nombre del producto"
             value={manualName}
@@ -316,13 +326,38 @@ export default function InventoryPage() {
             onKeyDown={e => e.key === 'Enter' && handleAddManual()}
             autoFocus
           />
-          <button
-            onClick={handleAddManual}
-            className="rounded-xl px-4 text-sm font-semibold"
-            style={{ background: '#a3e635', color: '#060e07' }}
-          >
-            Añadir
-          </button>
+          <div className="flex gap-2">
+            <input
+              className="w-20 rounded-xl px-3 py-2 text-sm outline-none"
+              style={{ background: '#1c321d', color: '#ecf5e0' }}
+              placeholder="Cant."
+              type="number"
+              min="0"
+              step="0.5"
+              value={manualQty}
+              onChange={e => setManualQty(e.target.value)}
+            />
+            <select
+              className="flex-1 rounded-xl px-3 py-2 text-sm outline-none"
+              style={{ background: '#1c321d', color: '#ecf5e0' }}
+              value={manualUnit}
+              onChange={e => setManualUnit(e.target.value)}
+            >
+              <option value="ud">ud</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">l</option>
+              <option value="paquete">paquete</option>
+            </select>
+            <button
+              onClick={handleAddManual}
+              className="rounded-xl px-4 text-sm font-semibold"
+              style={{ background: '#a3e635', color: '#060e07' }}
+            >
+              Añadir
+            </button>
+          </div>
         </div>
       )}
 
@@ -357,6 +392,10 @@ export default function InventoryPage() {
               const score = KETO_SCORE_LABEL[p.ketoScore]
               return (
                 <div key={p.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: '#1c321d' }}>
+                  <button
+                    className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    onClick={() => setDetailProduct(p)}
+                  >
                   {p.imageUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.imageUrl} alt={p.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
@@ -370,6 +409,7 @@ export default function InventoryPage() {
                       </span>
                     </div>
                   </div>
+                  </button>
                   {alreadyInPantry ? (
                     <button
                       onClick={() => pantryItem && handleRemoveFromPantry(pantryItem.id)}
@@ -478,6 +518,12 @@ export default function InventoryPage() {
           </div>
         )}
       </div>
+
+      <ProductDetailModal
+        product={detailProduct}
+        onClose={() => setDetailProduct(null)}
+        onAddToPantry={detailProduct ? async () => { await handleAddMercadona(detailProduct) } : undefined}
+      />
     </main>
   )
 }

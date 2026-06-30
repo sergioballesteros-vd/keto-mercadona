@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import ShoppingListItem from '@/components/ShoppingListItem'
 import type { MercadonaProduct as MercadonaResult } from '@/lib/mercadona'
+import ProductDetailModal from '@/components/ProductDetailModal'
 
 type ShoppingItem = {
   id: string
@@ -17,6 +18,7 @@ export default function ShoppingListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newItemName, setNewItemName] = useState('')
+  const [newItemQty, setNewItemQty] = useState('')
 
   // Mercadona search
   const [mercadonaQuery, setMercadonaQuery] = useState('')
@@ -24,6 +26,7 @@ export default function ShoppingListPage() {
   const [mercadonaLoading, setMercadonaLoading] = useState(false)
   const [mercadonaSearched, setMercadonaSearched] = useState(false)
   const [addingId, setAddingId] = useState<string | null>(null)
+  const [detailProduct, setDetailProduct] = useState<MercadonaResult | null>(null)
 
   const fetchItems = useCallback(async () => {
     try {
@@ -56,9 +59,13 @@ export default function ShoppingListPage() {
     await fetch('/api/shopping-list', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newItemName }),
+      body: JSON.stringify({
+        name: newItemName,
+        quantity: newItemQty ? newItemQty : null,
+      }),
     })
     setNewItemName('')
+    setNewItemQty('')
     await fetchItems()
   }
 
@@ -157,17 +164,22 @@ export default function ShoppingListPage() {
           <div className="mt-3 space-y-2">
             {mercadonaResults.map(p => (
               <div key={p.id} className="flex items-center gap-3 rounded-xl p-3" style={{ background: '#1c321d' }}>
-                {p.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.imageUrl} alt={p.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate" style={{ color: '#ecf5e0' }}>{p.name}</div>
-                  <div className="text-xs flex gap-2 mt-0.5">
-                    {p.unitPrice && <span className="font-medium" style={{ color: '#f59e0b' }}>{p.unitPrice.toFixed(2)}€</span>}
-                    <span style={{ color: '#547856' }}>keto {p.ketoScore}/5</span>
+                <button
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                  onClick={() => setDetailProduct(p)}
+                >
+                  {p.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.imageUrl} alt={p.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate" style={{ color: '#ecf5e0' }}>{p.name}</div>
+                    <div className="text-xs flex gap-2 mt-0.5">
+                      {p.unitPrice && <span className="font-medium" style={{ color: '#f59e0b' }}>{p.unitPrice.toFixed(2)}€</span>}
+                      <span style={{ color: '#547856' }}>keto {p.ketoScore}/5</span>
+                    </div>
                   </div>
-                </div>
+                </button>
                 <button
                   onClick={() => handleAddMercadonaToCart(p)}
                   disabled={addingId === p.id}
@@ -195,6 +207,16 @@ export default function ShoppingListPage() {
           value={newItemName}
           onChange={e => setNewItemName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAddManual()}
+        />
+        <input
+          className="w-16 rounded-xl px-2 py-2.5 text-sm outline-none text-center"
+          style={{ background: '#142514', color: '#ecf5e0', border: '1px solid #1c321d' }}
+          placeholder="cant."
+          type="number"
+          min="0"
+          step="0.5"
+          value={newItemQty}
+          onChange={e => setNewItemQty(e.target.value)}
         />
         <button
           onClick={handleAddManual}
@@ -231,6 +253,12 @@ export default function ShoppingListPage() {
           )}
         </div>
       )}
+
+      <ProductDetailModal
+        product={detailProduct}
+        onClose={() => setDetailProduct(null)}
+        onAddToShoppingList={detailProduct ? async () => { await handleAddMercadonaToCart(detailProduct) } : undefined}
+      />
     </main>
   )
 }
