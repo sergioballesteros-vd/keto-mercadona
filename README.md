@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="public/screenshot.jpg" width="600" style="border-radius: 20px; box-shadow: 0px 4px 20px rgba(0,0,0,0.5)" alt="KetoHoy App Mockup">
+  <img src="public/mockup_3d.jpg" width="600" style="border-radius: 20px; box-shadow: 0px 4px 20px rgba(0,0,0,0.5)" alt="KetoHoy App Mockup">
 </p>
 
 ---
