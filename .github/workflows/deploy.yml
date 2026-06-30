@@ -15,10 +15,11 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -euo pipefail
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
-            echo "UNSPLASH_ACCESS_KEY=${{ secrets.UNSPLASH_ACCESS_KEY }}" >> .env.local
+            printf 'UNSPLASH_ACCESS_KEY=%s\n' "${{ secrets.UNSPLASH_ACCESS_KEY }}" > .env.local
             npm ci --omit=dev
             npx prisma migrate deploy
             npm run build
-            pm2 restart ${{ secrets.PM2_APP_NAME }}
+            pm2 restart ${{ secrets.PM2_APP_NAME }} --update-env
