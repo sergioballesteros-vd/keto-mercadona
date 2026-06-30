@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import type { MercadonaProduct as MercadonaResult } from '@/lib/mercadona'
 import ProductDetailModal from '@/components/ProductDetailModal'
 
@@ -69,6 +69,8 @@ export default function InventoryPage() {
   const [modal, setModal] = useState<NutritionModal | null>(null)
   const [loadingNutrition, setLoadingNutrition] = useState(false)
   const [detailProduct, setDetailProduct] = useState<MercadonaResult | null>(null)
+  const modalCloseRef = useRef<HTMLButtonElement | null>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   // Manual add
   const [showManual, setShowManual] = useState(false)
@@ -84,6 +86,20 @@ export default function InventoryPage() {
   }, [])
 
   useEffect(() => { fetchPantry() }, [fetchPantry])
+
+  useEffect(() => {
+    if (!modal) return
+    previousFocusRef.current = document.activeElement as HTMLElement | null
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setModal(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    queueMicrotask(() => modalCloseRef.current?.focus())
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      previousFocusRef.current?.focus?.()
+    }
+  }, [modal])
 
   const pantryMercadonaIds = new Set(
     pantryItems.map(i => i.product.mercadonaId).filter(Boolean)
@@ -187,6 +203,9 @@ export default function InventoryPage() {
           className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: 'rgba(6,14,7,0.92)' }}
           onClick={() => setModal(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="inventory-nutrition-title"
         >
           <div
             className="w-full max-w-2xl p-5 max-h-[80vh] overflow-y-auto"
@@ -199,14 +218,22 @@ export default function InventoryPage() {
                 <img src={modal.imageUrl} alt={modal.name} className="w-16 h-16 rounded-2xl object-cover flex-shrink-0" />
               )}
               <div className="flex-1">
-                <h2 className="font-bold text-lg leading-tight" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>
+                <h2 id="inventory-nutrition-title" className="font-bold text-lg leading-tight" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>
                   {modal.name}
                 </h2>
                 {modal.unitPrice && (
                   <p className="font-semibold mt-0.5" style={{ color: '#f59e0b' }}>{modal.unitPrice.toFixed(2)}€</p>
                 )}
               </div>
-              <button onClick={() => setModal(null)} className="text-2xl leading-none" style={{ color: '#3b5e3c' }}>×</button>
+              <button
+                ref={modalCloseRef}
+                onClick={() => setModal(null)}
+                className="text-2xl leading-none"
+                style={{ color: '#3b5e3c' }}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
             </div>
 
             {/* Keto score */}

@@ -137,8 +137,8 @@ export default function ShoppingListPage() {
   if (loading) return <div className="p-4" style={{ color: '#547856' }}>Cargando...</div>
 
   return (
-    <main className="px-4 pt-4 pb-4">
-      <div className="flex items-center justify-between pt-2 pb-4">
+    <main className="px-4 pt-4 pb-20">
+      <div className="flex flex-col gap-3 pt-2 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>
             Lista de compra
@@ -149,10 +149,10 @@ export default function ShoppingListPage() {
           </p>
         </div>
         {checked.length > 0 && (
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
             <button
               onClick={handleMoveAllToPantry}
-              className="text-xs font-semibold px-3 py-1.5 rounded-xl"
+              className="text-xs font-semibold px-3 py-2 rounded-xl"
               style={{ background: '#a3e635', color: '#060e07' }}
             >
               → Despensa ({checked.length})
@@ -231,32 +231,35 @@ export default function ShoppingListPage() {
       </div>
 
       {/* Manual add */}
-      <div className="flex gap-2 mb-5">
-        <input
-          className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
-          style={{ background: '#142514', color: '#ecf5e0', border: '1px solid #1c321d' }}
-          placeholder="Añadir producto manual..."
-          value={newItemName}
-          onChange={e => setNewItemName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleAddManual()}
-        />
-        <input
-          className="w-16 rounded-xl px-2 py-2.5 text-sm outline-none text-center"
-          style={{ background: '#142514', color: '#ecf5e0', border: '1px solid #1c321d' }}
-          placeholder="cant."
-          type="number"
-          min="0"
-          step="0.5"
-          value={newItemQty}
-          onChange={e => setNewItemQty(e.target.value)}
-        />
-        <button
-          onClick={handleAddManual}
-          className="rounded-xl px-4 text-sm font-bold"
-          style={{ background: '#a3e635', color: '#060e07' }}
-        >
-          +
-        </button>
+      <div className="rounded-2xl p-4 mb-5" style={{ background: '#142514', border: '1px solid #1c321d' }}>
+        <p className="text-sm font-semibold mb-3" style={{ color: '#ecf5e0' }}>＋ Añadir manualmente</p>
+        <div className="flex gap-2">
+          <input
+            className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
+            style={{ background: '#1c321d', color: '#ecf5e0', border: '1px solid #1c321d' }}
+            placeholder="Producto"
+            value={newItemName}
+            onChange={e => setNewItemName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddManual()}
+          />
+          <input
+            className="w-20 rounded-xl px-2 py-2.5 text-sm outline-none text-center"
+            style={{ background: '#1c321d', color: '#ecf5e0', border: '1px solid #1c321d' }}
+            placeholder="cant."
+            type="number"
+            min="0"
+            step="0.5"
+            value={newItemQty}
+            onChange={e => setNewItemQty(e.target.value)}
+          />
+          <button
+            onClick={handleAddManual}
+            className="rounded-xl px-4 text-sm font-bold"
+            style={{ background: '#a3e635', color: '#060e07' }}
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-sm text-center py-4" style={{ color: '#ef4444' }}>{error}</p>}

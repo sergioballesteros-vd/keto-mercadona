@@ -47,7 +47,7 @@ export default function ExplorePage() {
   }
 
   return (
-    <main className="px-4 pt-4 pb-4">
+    <main className="px-4 pt-4 pb-8">
       <ProductDetailModal
         product={detailProduct}
         onClose={() => setDetailProduct(null)}
@@ -59,16 +59,29 @@ export default function ExplorePage() {
         <h1 className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>
           Explorar Mercadona
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: '#547856' }}>Navega por categoría</p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="text-sm" style={{ color: '#547856' }}>
+            {selectedCategory ? 'Filtrando por categoría' : 'Navega por categoría'}
+          </p>
+          {selectedCategory && (
+            <button
+              onClick={() => { setSelectedCategory(null); setProducts([]) }}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full"
+              style={{ background: '#142514', color: '#a3e635', border: '1px solid #1c321d' }}
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Category grid */}
-      <div className="grid grid-cols-4 gap-2 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         {CATEGORIES.map(cat => (
           <button
             key={cat.key}
             onClick={() => fetchCategory(cat.key)}
-            className="rounded-2xl p-3 text-center transition-all"
+            className="rounded-2xl p-4 text-center transition-all min-h-24"
             style={selectedCategory === cat.key
               ? { background: '#a3e635', color: '#060e07' }
               : { background: '#142514', border: '1px solid #1c321d', color: '#ecf5e0' }
@@ -79,6 +92,12 @@ export default function ExplorePage() {
           </button>
         ))}
       </div>
+
+      {selectedCategory && (
+        <p className="text-xs mb-4" style={{ color: '#3b5e3c' }}>
+          Mostrando {products.length > 0 ? `${products.length} productos` : 'resultados de la categoría seleccionada'}
+        </p>
+      )}
 
       {/* Results */}
       {loading && (
@@ -92,7 +111,7 @@ export default function ExplorePage() {
           {products.map(p => (
             <div
               key={p.id}
-              className="flex items-center gap-3 rounded-xl p-3 cursor-pointer"
+              className="flex items-center gap-3 rounded-2xl p-3 cursor-pointer"
               style={{ background: '#142514', border: '1px solid #1c321d' }}
               onClick={() => setDetailProduct(p)}
             >

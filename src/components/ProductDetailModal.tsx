@@ -23,6 +23,8 @@ export default function ProductDetailModal({ product, onClose, onAddToPantry, on
   const [loadingDetail, setLoadingDetail] = React.useState(false)
   const [addingPantry, setAddingPantry] = React.useState(false)
   const [addingCart, setAddingCart] = React.useState(false)
+  const closeButtonRef = React.useRef<HTMLButtonElement | null>(null)
+  const previousFocusRef = React.useRef<HTMLElement | null>(null)
 
   React.useEffect(() => {
     if (!product?.mercadonaId) return
@@ -34,6 +36,20 @@ export default function ProductDetailModal({ product, onClose, onAddToPantry, on
       .finally(() => setLoadingDetail(false))
   }, [product?.mercadonaId])
 
+  React.useEffect(() => {
+    if (!product) return
+    previousFocusRef.current = document.activeElement as HTMLElement | null
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    queueMicrotask(() => closeButtonRef.current?.focus())
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      previousFocusRef.current?.focus?.()
+    }
+  }, [product, onClose])
+
   if (!product) return null
 
   const score = KETO_SCORE_LABEL[product.ketoScore] ?? KETO_SCORE_LABEL[2]
@@ -43,6 +59,9 @@ export default function ProductDetailModal({ product, onClose, onAddToPantry, on
       className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: 'rgba(6,14,7,0.92)' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-detail-title"
     >
       <div
         className="w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto"
@@ -56,11 +75,19 @@ export default function ProductDetailModal({ product, onClose, onAddToPantry, on
             <img src={product.imageUrl} alt={product.name} className="w-16 h-16 rounded-2xl object-cover flex-shrink-0" />
           )}
           <div className="flex-1">
-            <h2 className="font-bold text-lg leading-tight" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>{product.name}</h2>
+            <h2 id="product-detail-title" className="font-bold text-lg leading-tight" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>{product.name}</h2>
             {product.unitPrice && <p className="font-semibold mt-0.5" style={{ color: '#f59e0b' }}>{product.unitPrice.toFixed(2)}€</p>}
             {product.referencePrice && <p className="text-xs mt-0.5" style={{ color: '#3b5e3c' }}>{product.referencePrice}</p>}
           </div>
-          <button onClick={onClose} className="text-2xl leading-none" style={{ color: '#3b5e3c' }}>×</button>
+          <button
+            ref={closeButtonRef}
+            onClick={onClose}
+            className="text-2xl leading-none"
+            style={{ color: '#3b5e3c' }}
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
         </div>
 
         {/* Keto score */}

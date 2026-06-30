@@ -36,7 +36,9 @@ export default function Navigation() {
                 />
               )}
               <Icon size={19} />
-              <span className="hidden text-[11px] font-medium tracking-tight sm:block">{label}</span>
+              <span className={`${active ? 'block' : 'hidden'} text-[10px] font-medium tracking-tight sm:block`}>
+                {label}
+              </span>
             </Link>
           )
         })}

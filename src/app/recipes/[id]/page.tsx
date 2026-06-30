@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { db } from '@/lib/db'
+import { fetchRecipeImage } from '@/lib/unsplash'
 import AddMissingButton from './AddMissingButton'
 
 type RecipeIngredient = {
@@ -26,9 +28,19 @@ type Recipe = {
 
 async function getRecipe(id: string): Promise<Recipe | null> {
   try {
-    const res = await fetch(`http://localhost:3000/api/recipes/${id}`, { cache: 'no-store' })
-    if (!res.ok) return null
-    return res.json()
+    const recipe = await db.recipe.findUnique({
+      where: { id },
+      include: { ingredients: { include: { product: true } } },
+    })
+    if (!recipe) return null
+    if (!recipe.imageUrl) {
+      const imageUrl = await fetchRecipeImage(recipe.title)
+      if (imageUrl) {
+        await db.recipe.update({ where: { id }, data: { imageUrl } })
+        return { ...recipe, imageUrl }
+      }
+    }
+    return recipe
   } catch {
     return null
   }
@@ -62,71 +74,73 @@ export default async function RecipeDetailPage({
   const optional = recipe.ingredients.filter(i => i.optional)
 
   return (
-    <main className="p-4">
-      <div className="pt-4">
-        <Link href="/meals" className="text-gray-500 hover:text-gray-300 text-sm mb-4 inline-block">
+    <main className="px-4 pt-4 pb-8">
+      <div className="pt-2">
+        <Link href="/meals" className="text-sm mb-4 inline-block transition-colors" style={{ color: '#547856' }}>
           ← Volver
         </Link>
 
-        <h1 className="text-2xl font-bold mt-2 mb-2">{recipe.title}</h1>
+        <h1 className="text-2xl font-bold mt-2 mb-2" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>
+          {recipe.title}
+        </h1>
         {recipe.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={recipe.imageUrl}
             alt={recipe.title}
-            className="w-full h-48 object-cover rounded-2xl mb-4"
+            className="w-full h-56 object-cover rounded-3xl mb-4 border border-forest-700"
           />
         )}
-        <p className="text-gray-400 mb-4">{recipe.description}</p>
+        <p className="text-sm mb-4 leading-relaxed" style={{ color: '#7a9e7c' }}>{recipe.description}</p>
 
         {/* Meta */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <span className="bg-gray-800 px-3 py-1 rounded-full text-sm">⏱ {recipe.prepTimeMinutes} min</span>
-          <span className="bg-gray-800 px-3 py-1 rounded-full text-sm">{difficultyLabel[recipe.difficulty]}</span>
+          <span className="bg-forest-800 px-3 py-1 rounded-full text-sm border border-forest-700">⏱ {recipe.prepTimeMinutes} min</span>
+          <span className="bg-forest-800 px-3 py-1 rounded-full text-sm border border-forest-700">{difficultyLabel[recipe.difficulty]}</span>
           {mealTypes.map(mt => (
-            <span key={mt} className="bg-green-900 text-green-300 px-3 py-1 rounded-full text-sm">
+            <span key={mt} className="bg-green-900 text-green-300 px-3 py-1 rounded-full text-sm border border-green-800">
               {mealTypeLabels[mt] ?? mt}
             </span>
           ))}
           {recipe.ketoLevel === 'strict' && (
-            <span className="bg-green-800 text-green-200 px-3 py-1 rounded-full text-sm">✓ Keto estricto</span>
+            <span className="bg-green-800 text-green-200 px-3 py-1 rounded-full text-sm border border-green-700">✓ Keto estricto</span>
           )}
         </div>
 
         {/* Ingredients */}
-        <section className="mb-6">
-          <h2 className="font-semibold text-lg mb-3">Ingredientes</h2>
+        <section className="mb-6 rounded-2xl border border-forest-700 bg-forest-800/80 p-4">
+          <h2 className="font-semibold text-lg mb-3" style={{ color: '#ecf5e0' }}>Ingredientes</h2>
           <ul className="space-y-2">
             {required.map(ing => (
-              <li key={ing.id} className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2">
+              <li key={ing.id} className="flex items-center gap-2 bg-forest-900 rounded-xl px-3 py-2 border border-forest-700">
                 <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                <span className="flex-1">{ing.name}</span>
-                {ing.quantity && <span className="text-gray-500 text-sm">{ing.quantity}</span>}
+                <span className="flex-1" style={{ color: '#ecf5e0' }}>{ing.name}</span>
+                {ing.quantity && <span className="text-sm" style={{ color: '#547856' }}>{ing.quantity}</span>}
                 {ing.product?.unitPrice && (
-                  <span className="text-gray-600 text-xs">{ing.product.unitPrice.toFixed(2)}€</span>
+                  <span className="text-xs" style={{ color: '#f59e0b' }}>{ing.product.unitPrice.toFixed(2)}€</span>
                 )}
               </li>
             ))}
             {optional.map(ing => (
-              <li key={ing.id} className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 opacity-60">
-                <span className="w-2 h-2 rounded-full bg-gray-600 flex-shrink-0" />
-                <span className="flex-1">{ing.name}</span>
-                <span className="text-gray-600 text-xs">opcional</span>
+              <li key={ing.id} className="flex items-center gap-2 bg-forest-900 rounded-xl px-3 py-2 opacity-70 border border-forest-700">
+                <span className="w-2 h-2 rounded-full bg-forest-500 flex-shrink-0" />
+                <span className="flex-1" style={{ color: '#ecf5e0' }}>{ing.name}</span>
+                <span className="text-xs" style={{ color: '#547856' }}>opcional</span>
               </li>
             ))}
           </ul>
         </section>
 
         {/* Steps */}
-        <section className="mb-6">
-          <h2 className="font-semibold text-lg mb-3">Preparación</h2>
+        <section className="mb-6 rounded-2xl border border-forest-700 bg-forest-800/80 p-4">
+          <h2 className="font-semibold text-lg mb-3" style={{ color: '#ecf5e0' }}>Preparación</h2>
           <ol className="space-y-3">
             {steps.map((step, i) => (
               <li key={i} className="flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-green-800 text-green-200 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                <span className="w-7 h-7 rounded-full bg-green-800 text-green-200 flex items-center justify-center text-sm font-bold flex-shrink-0 border border-green-700">
                   {i + 1}
                 </span>
-                <p className="text-gray-300 pt-0.5">{step}</p>
+                <p className="pt-0.5 text-sm leading-relaxed" style={{ color: '#d5e6d6' }}>{step}</p>
               </li>
             ))}
           </ol>

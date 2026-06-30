@@ -76,7 +76,7 @@ export default function WeeklyPlanPage() {
   if (loading) return <div className="p-4" style={{ color: '#547856' }}>Cargando...</div>
 
   return (
-    <main className="px-4 pt-4 pb-4">
+    <main className="px-4 pt-4 pb-8">
       {error && <p className="text-sm text-center py-8" style={{ color: '#ef4444' }}>{error}</p>}
       <div className="flex items-center justify-between pt-2 pb-5">
         <h1 className="text-2xl font-bold" style={{ fontFamily: 'Syne, sans-serif', color: '#ecf5e0' }}>
@@ -111,44 +111,56 @@ export default function WeeklyPlanPage() {
                 const meal = getMeal(dayIndex, mealType)
                 const mealInfo = MEAL_LABELS[mealType]
                 return (
-                  <div key={mealType} className="flex items-center gap-3 px-4 py-3">
+                  <div key={mealType} className="flex items-start gap-3 px-4 py-3">
                     <span className="text-base flex-shrink-0 w-5 text-center">{mealInfo.emoji}</span>
                     {meal?.recipe ? (
-                      <div className="flex-1 flex items-center gap-2 min-w-0">
-                        <Link
-                          href={`/recipes/${meal.recipe.id}`}
-                          className="text-sm truncate flex-1 transition-colors"
-                          style={{ color: '#ecf5e0' }}
-                          onMouseEnter={e => { (e.target as HTMLElement).style.color = '#a3e635' }}
-                          onMouseLeave={e => { (e.target as HTMLElement).style.color = '#ecf5e0' }}
-                        >
-                          {meal.recipe.title}
-                        </Link>
-                        <span className="flex items-center gap-1 text-xs flex-shrink-0" style={{ color: '#3b5e3c' }}>
-                          <ClockIcon size={11} />{meal.recipe.prepTimeMinutes}m
-                        </span>
-                        <button
-                          onClick={() => handleRegenerateMeal(meal.id)}
-                          disabled={regeneratingMeal === meal.id}
-                          className="flex-shrink-0 transition-colors disabled:opacity-50"
-                          style={{ color: '#3b5e3c' }}
-                          title="Cambiar receta"
-                          aria-label="Cambiar receta"
-                        >
-                          <RefreshIcon size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleAddMissingToCart(meal.recipe!.id)}
-                          className="flex-shrink-0 transition-colors"
-                          style={{ color: cartAdded[meal.recipe!.id] !== undefined ? '#a3e635' : '#3b5e3c' }}
-                          title={cartAdded[meal.recipe!.id] !== undefined ? `+${cartAdded[meal.recipe!.id]} añadidos` : 'Añadir faltantes a compra'}
-                          aria-label="Añadir faltantes a compra"
-                        >
-                          <CartIcon size={14} />
-                        </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Link
+                            href={`/recipes/${meal.recipe.id}`}
+                            className="text-sm truncate flex-1 transition-colors"
+                            style={{ color: '#ecf5e0' }}
+                            onMouseEnter={e => { (e.target as HTMLElement).style.color = '#a3e635' }}
+                            onMouseLeave={e => { (e.target as HTMLElement).style.color = '#ecf5e0' }}
+                          >
+                            {meal.recipe.title}
+                          </Link>
+                          <span className="flex items-center gap-1 text-xs flex-shrink-0" style={{ color: '#3b5e3c' }}>
+                            <ClockIcon size={11} />{meal.recipe.prepTimeMinutes}m
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-[11px] uppercase tracking-widest" style={{ color: '#264227' }}>
+                            {mealInfo.label}
+                          </span>
+                          <button
+                            onClick={() => handleRegenerateMeal(meal.id)}
+                            disabled={regeneratingMeal === meal.id}
+                            className="flex-shrink-0 transition-colors disabled:opacity-50"
+                            style={{ color: '#3b5e3c' }}
+                            title="Cambiar receta"
+                            aria-label="Cambiar receta"
+                          >
+                            <RefreshIcon size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleAddMissingToCart(meal.recipe!.id)}
+                            className="flex-shrink-0 transition-colors"
+                            style={{ color: cartAdded[meal.recipe!.id] !== undefined ? '#a3e635' : '#3b5e3c' }}
+                            title={cartAdded[meal.recipe!.id] !== undefined ? `+${cartAdded[meal.recipe!.id]} añadidos` : 'Añadir faltantes a compra'}
+                            aria-label="Añadir faltantes a compra"
+                          >
+                            <CartIcon size={14} />
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <span className="text-xs italic flex-1" style={{ color: '#264227' }}>Sin asignar</span>
+                      <div className="flex-1">
+                        <span className="text-xs italic block" style={{ color: '#264227' }}>Sin asignar</span>
+                        <span className="text-[11px] uppercase tracking-widest mt-1 block" style={{ color: '#264227' }}>
+                          {mealInfo.label}
+                        </span>
+                      </div>
                     )}
                   </div>
                 )
