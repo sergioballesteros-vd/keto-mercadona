@@ -16,19 +16,27 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
+            DEPLOY_SHA="${{ github.sha }}"
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             DEPLOY_PATH="${DEPLOY_PATH:-/home/ubuntu/keto-mercadona}"
             TMP_DIR="$(mktemp -d)"
-            git clone --depth 1 --branch main https://github.com/sergioballesteros-vd/ketohoy.git "$TMP_DIR"
+            trap 'rm -rf "$TMP_DIR"' EXIT
+            echo "Deploying ${DEPLOY_SHA}"
+            git init "$TMP_DIR" >/dev/null
+            git -C "$TMP_DIR" remote add origin https://github.com/sergioballesteros-vd/ketohoy.git
+            git -C "$TMP_DIR" fetch --depth 1 origin "$DEPLOY_SHA"
+            git -C "$TMP_DIR" checkout --force FETCH_HEAD
             rsync -a --delete \
               --exclude '.env' \
               --exclude '.env.local' \
               --exclude 'dev.db' \
               "$TMP_DIR"/ "$DEPLOY_PATH"/
             cd "$DEPLOY_PATH"
+            printf '%s\n' "$DEPLOY_SHA" > .deploy-sha
             printf 'UNSPLASH_ACCESS_KEY=%s\n' "${{ secrets.UNSPLASH_ACCESS_KEY }}" > .env.local
-            npm ci
+            npm ci --include=dev --no-audit --no-fund
             npx prisma db push
             npm run build
             pm2 restart ${{ secrets.PM2_APP_NAME }} --update-env
-            rm -rf "$TMP_DIR"
+            sleep 5
+            curl -fsS --max-time 15 http://127.0.0.1:3000/ >/dev/null
