@@ -16,8 +16,17 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            DEPLOY_PATH="${DEPLOY_PATH:-/home/ubuntu/keto-mercadona}"
+            cd "$DEPLOY_PATH"
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin https://github.com/sergioballesteros-vd/ketohoy.git
+            fi
+            git remote set-url origin https://github.com/sergioballesteros-vd/ketohoy.git
+            git fetch origin main
+            git checkout -B main origin/main
+            git reset --hard origin/main
             printf 'UNSPLASH_ACCESS_KEY=%s\n' "${{ secrets.UNSPLASH_ACCESS_KEY }}" > .env.local
             npm ci --omit=dev
             npx prisma migrate deploy
