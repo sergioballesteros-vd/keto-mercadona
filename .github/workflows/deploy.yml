@@ -40,4 +40,5 @@ jobs:
             npm run build
             pm2 restart ${{ secrets.PM2_APP_NAME }} --update-env
             sleep 5
-            curl -fsS --max-time 15 http://127.0.0.1:3000/ >/dev/null
+            test "$(cat .deploy-sha)" = "$DEPLOY_SHA"
+            curl -fsS --max-time 15 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' http://127.0.0.1:3000/explore | grep -q 'Descubrir'
